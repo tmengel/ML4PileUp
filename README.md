@@ -19,12 +19,14 @@ Additional changes to the data include adding random gaussian noise to the trace
 The full model will act similar to an auto encoder, where the encoder creates a feature vector, which the decoder then interprets to attempt to replicate the input.  In this case, the encoder portion will be composed of multiple different sub models, each with a specific focus, namely detecting the pileup (with a boolean output), detecting the phase of the pileup, and detecting the relative amplitude of the two traces in the pileup.  The decoder will then take the feature vector from the output of the encoder and try to create a decomposition of the two pileup signals.  This is slightly different to a regular auto encoder, which tries to reproduce the input exactly.  The goal of this separation is to use the encoder to independently measure whether there is a pileup event, and return its phase and relative amplitudes.  These values will either be a part of the feature vector, or be a single layer away from the feature vector that is passed to the decoder.  The separation of the encoder and decoder also allows for the encoder to be trained separately from the decoder, allowing for quicker results.  The full output of the model will also append the results from the encoder (pileup, phase, and amplitude) along with the deconvoluted traces.
 
 ![alt text][fig1]
+
 [fig1]:https://github.com/tmengel/ML4PileUp/blob/main/write-up/diagrammodels.png "Figure 1. Diagrams for the Pileup Net, Phase Net, and Amp. Net used for measuring the pileup of two signals in a single event.  These blocks are implemented into the full model."
  
 *Figure 1. Diagrams for the Pileup Net, Phase Net, and Amp. Net used for measuring the pileup of two signals in a single event.  These blocks are implemented into the full model.*
 
  
-![alt text](https://github.com/tmengel/ML4PileUp/write-up/autoencoder.png?raw=true)
+![alt text][fig2]
+
 [fig2]: https://github.com/tmengel/ML4PileUp/blob/main/write-up/autoencoder.png "Figure 2. Diagram for the autoencoder net, where the encoder is above the yellow dashed line and the decoder is below the line."
 
 *Figure 2. Diagram for the autoencoder net, where the encoder is above the yellow dashed line and the decoder is below the line.*
