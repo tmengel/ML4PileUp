@@ -53,7 +53,7 @@ def parse_tfrecord_fn(example):
 
 
 tfrecords_dir = "data/tfrecords"
-fname = 'data/DataSmall.root'
+fname = 'data/Data.root'
 tree = 'OutputTree'
 traceBranch = "trace"
 traceLength = TRACELENGTH-4*AUGMENTATION
@@ -74,7 +74,8 @@ if not os.path.exists(tfrecords_dir):
   os.makedirs(tfrecords_dir)
 
 import progressbar
-bar = progressbar.ProgressBar(max_value=len(pileup))
+bar = progressbar.ProgressBar(maxval=len(pileup))
+bar.start()
 
 events = uproot.open(fname+':'+tree)
 tfrec_num = 0
