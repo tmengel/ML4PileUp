@@ -4,18 +4,18 @@
 import os
 import tensorflow as tf
 
-#num_threads = 20
-#os.environ["OMP_NUM_THREADS"] = "10"
-#os.environ["TF_NUM_INTRAOP_THREADS"] = "10"
-#os.environ["TF_NUM_INTEROP_THREADS"] = "10"
-#
-#tf.config.threading.set_inter_op_parallelism_threads(
-#    num_threads
-#)
-#tf.config.threading.set_intra_op_parallelism_threads(
-#    num_threads
-#)
-#tf.config.set_soft_device_placement(True)
+num_threads = 20
+os.environ["OMP_NUM_THREADS"] = "10"
+os.environ["TF_NUM_INTRAOP_THREADS"] = "10"
+os.environ["TF_NUM_INTEROP_THREADS"] = "10"
+
+tf.config.threading.set_inter_op_parallelism_threads(
+    num_threads
+)
+tf.config.threading.set_intra_op_parallelism_threads(
+    num_threads
+)
+tf.config.set_soft_device_placement(True)
 
 
 from tensorflow import keras

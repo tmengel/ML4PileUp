@@ -31,9 +31,10 @@ NUMEPOCHS = 100
 PHASEMAX = 100
 PERCENTPILEUP = 0.5
 NUMTRAINING = 20000
-ModelOutputName = 'TannerTriad'
+ModelOutputName = 'TannerPile'
 AUGMENTATION = 8
 TRACELENGTH = 250
+batch_size=64
 
 
 #def GetData(filename, treename="timing"):
@@ -314,42 +315,30 @@ def TriadNet():
 
 print('Starting to get data')
 
-fname = 'data/Data.root'
+#fname = 'data/Data.root'
+#tree = 'OutputTree'
+#traceBranch = "trace"
+#traceLength = TRACELENGTH-4*AUGMENTATION
+#pileup = GetData(fname,'pile',tree)
+#DATASET_SIZE = len(pileup)
+#print(DATASET_SIZE)
+#print('Loaded Data')
+fname = 'data/DataSmall.root'
 tree = 'OutputTree'
 traceBranch = "trace"
 traceLength = TRACELENGTH-4*AUGMENTATION
 pileup = GetData(fname,'pile',tree)
+phases = GetData(fname,'phase',tree)
+amps = GetData(fname,'amp',tree)
+traces = GetData(fname,traceBranch,tree)
 DATASET_SIZE = len(pileup)
-print(DATASET_SIZE)
+print(DATASET_SIZE,traces.shape,phases.shape,amps.shape,pileup.shape)
 print('Loaded Data')
 
-tfrecords_dir = "data/tfrecords"
-num_samples = 4096
+from sklearn.model_selection import train_test_split
+train_x, test_x, train_y, test_y, train_ifPile, test_ifPile, train_amps, test_amps = train_test_split(traces,phases,pileup,amps,train_size=0.85)
 
-train_size = int(0.7*DATASET_SIZE)
-val_size = int(0.15*DATASET_SIZE)
-test_size = int(0.15*DATASET_SIZE)
-train_filenames = tf.io.gfile.glob(f"{tfrecords_dir}/*.tfrec")
-batch_size = 256
-steps_per_epoch = train_size/batch_size
-AUTOTUNE = tf.data.AUTOTUNE
-
-train_size = int(0.7*DATASET_SIZE)
-val_size = int(0.15*DATASET_SIZE)
-test_size = int(0.15*DATASET_SIZE)
-
-full_dataset = tf.data.TFRecordDataset(train_filenames)
-full_dataset = full_dataset.shuffle(10, reshuffle_each_iteration=False)
-train_dataset = full_dataset.take(train_size)
-test_dataset = full_dataset.skip(train_size)
-val_dataset = test_dataset.skip(test_size)
-test_dataset = test_dataset.take(test_size)
-val_dataset = val_dataset.take(val_size)
-
-print(type(train_dataset),type(val_dataset))
-
-
-model = TriadNet()
+model = PileupNet_Single()
 
 phase_layers = [layer for layer in model.layers if 'phase' in layer.name]
 pileup_layers = [layer for layer in model.layers if 'pileup' in layer.name]
@@ -396,7 +385,7 @@ early_stopping_amp = EarlyStoppingWithUntrainableLayers(
 
 
 model.compile(optimizer='adam', loss=['bce','mse','mse'], metrics='accuracy')
-history = model.fit(get_shuffledDataset(train_dataset,batch_size), epochs=NUMEPOCHS, batch_size=batch_size, steps_per_epoch=steps_per_epoch, validation_data=get_shuffledDataset(val_dataset,batch_size), validation_steps=val_size, validation_batch_size=batch_size, verbose=2, callbacks=[early_stopping_all,early_stopping_pileup,early_stopping_phase,early_stopping_amp])
+history = model.fit(train_x, [train_ifPile,train_y,train_amps], epochs=NUMEPOCHS, batch_size=batch_size, validation_split=0.2, verbose=2, callbacks=[early_stopping_all,early_stopping_pileup,early_stopping_phase,early_stopping_amp])
 
 
 #### Saving the model
