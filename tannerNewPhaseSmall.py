@@ -4,18 +4,18 @@
 import os
 import tensorflow as tf
 
-#num_threads = 20
-#os.environ["OMP_NUM_THREADS"] = "10"
-#os.environ["TF_NUM_INTRAOP_THREADS"] = "10"
-#os.environ["TF_NUM_INTEROP_THREADS"] = "10"
-#
-#tf.config.threading.set_inter_op_parallelism_threads(
-#    num_threads
-#)
-#tf.config.threading.set_intra_op_parallelism_threads(
-#    num_threads
-#)
-#tf.config.set_soft_device_placement(True)
+num_threads = 20
+os.environ["OMP_NUM_THREADS"] = "10"
+os.environ["TF_NUM_INTRAOP_THREADS"] = "10"
+os.environ["TF_NUM_INTEROP_THREADS"] = "10"
+
+tf.config.threading.set_inter_op_parallelism_threads(
+    num_threads
+)
+tf.config.threading.set_intra_op_parallelism_threads(
+    num_threads
+)
+tf.config.set_soft_device_placement(True)
 
 
 from tensorflow import keras
@@ -26,6 +26,7 @@ import pandas as pd
 import awkward as ak
 
 print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
+print("Num CPUs Available: ", len(tf.config.list_physical_devices('CPU')))
 
 NUMEPOCHS = 100
 PHASEMAX = 100
@@ -199,6 +200,7 @@ def PhaseNet_Single():
     For single phase prediction
     '''
     defSize = TRACELENGTH-4*AUGMENTATION
+    input = layers.Input(shape=(defSize,1))
     phaseconv1 = layers.Conv1D(kernel_size=10, filters=16, activation='tanh', name='conv1')(input)
     phaseflat1 = layers.Flatten(name='flatten1')(phaseconv1)
     phasedense1 = layers.Dense(128, activation='relu', name='dense1')(phaseflat1)
@@ -338,11 +340,13 @@ print('Loaded Data')
 from sklearn.model_selection import train_test_split
 train_x, test_x, train_y, test_y, train_ifPile, test_ifPile, train_amps, test_amps = train_test_split(traces,phases,pileup,amps,train_size=0.85)
 
+print('Split Data')
+
 model = PhaseNet_Single()
 
-phase_layers = [layer for layer in model.layers if 'phase' in layer.name]
-pileup_layers = [layer for layer in model.layers if 'pileup' in layer.name]
-amp_layers = [layer for layer in model.layers if 'amp' in layer.name]
+#phase_layers = [layer for layer in model.layers if 'phase' in layer.name]
+#pileup_layers = [layer for layer in model.layers if 'pileup' in layer.name]
+#amp_layers = [layer for layer in model.layers if 'amp' in layer.name]
 
 min_delta = 5.e-6
 patience = 10
@@ -356,36 +360,36 @@ early_stopping_all =tf.keras.callbacks.EarlyStopping(
     restore_best_weights=True
 )
 
-early_stopping_pileup = EarlyStoppingWithUntrainableLayers(
-    monitor='val_pileupoutput_loss',
-    min_delta=min_delta,
-    patience=patience,
-    verbose=1,
-    restore_best_weights=True,
-    layers_to_freeze=pileup_layers
-)
+#early_stopping_pileup = EarlyStoppingWithUntrainableLayers(
+#    monitor='val_pileupoutput_loss',
+#    min_delta=min_delta,
+#    patience=patience,
+#    verbose=1,
+#    restore_best_weights=True,
+#    layers_to_freeze=pileup_layers
+#)
+#
+#early_stopping_phase = EarlyStoppingWithUntrainableLayers(
+#    monitor='val_phaseoutput_loss',
+#    min_delta=min_delta,
+#    patience=patience,
+#    verbose=1,
+#    restore_best_weights=True,
+#    layers_to_freeze=phase_layers
+#)
+#
+#early_stopping_amp = EarlyStoppingWithUntrainableLayers(
+#    monitor='val_ampoutput_loss',
+#    min_delta=min_delta,
+#    patience=patience,
+#    verbose=1,
+#    restore_best_weights=True,
+#    layers_to_freeze=amp_layers
+#)
 
-early_stopping_phase = EarlyStoppingWithUntrainableLayers(
-    monitor='val_phaseoutput_loss',
-    min_delta=min_delta,
-    patience=patience,
-    verbose=1,
-    restore_best_weights=True,
-    layers_to_freeze=phase_layers
-)
 
-early_stopping_amp = EarlyStoppingWithUntrainableLayers(
-    monitor='val_ampoutput_loss',
-    min_delta=min_delta,
-    patience=patience,
-    verbose=1,
-    restore_best_weights=True,
-    layers_to_freeze=amp_layers
-)
-
-
-model.compile(optimizer='adam', loss=['bce','mse','mse'], metrics='accuracy')
-history = model.fit(train_x, [train_ifPile,train_y,train_amps], epochs=NUMEPOCHS, batch_size=batch_size, validation_split=0.2, verbose=2, callbacks=[early_stopping_all,early_stopping_pileup,early_stopping_phase,early_stopping_amp])
+model.compile(optimizer='adam', loss='mse', metrics='accuracy')
+history = model.fit(train_x, train_y, epochs=NUMEPOCHS, batch_size=batch_size, validation_split=0.2, verbose=2, callbacks=early_stopping_all)
 
 
 #### Saving the model

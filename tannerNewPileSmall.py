@@ -4,30 +4,33 @@
 import os
 import tensorflow as tf
 
-#num_threads = 20
-#os.environ["OMP_NUM_THREADS"] = "10"
-#os.environ["TF_NUM_INTRAOP_THREADS"] = "10"
-#os.environ["TF_NUM_INTEROP_THREADS"] = "10"
-#
-#tf.config.threading.set_inter_op_parallelism_threads(
-#    num_threads
-#)
-#tf.config.threading.set_intra_op_parallelism_threads(
-#    num_threads
-#)
-#tf.config.set_soft_device_placement(True)
+num_threads = 20
+os.environ["OMP_NUM_THREADS"] = "10"
+os.environ["TF_NUM_INTRAOP_THREADS"] = "10"
+os.environ["TF_NUM_INTEROP_THREADS"] = "10"
+
+tf.config.threading.set_inter_op_parallelism_threads(
+    num_threads
+)
+tf.config.threading.set_intra_op_parallelism_threads(
+    num_threads
+)
+tf.config.set_soft_device_placement(True)
 
 
 from tensorflow import keras
 from tensorflow.keras import models, layers
+from tensorflow.keras.callbacks import EarlyStopping
+es = EarlyStopping(monitor='val_loss', mode='min',verbose=1,patience=10)
 import uproot
 import numpy as np
 import pandas as pd
 import awkward as ak
 
 print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
+print("Num CPUs Available: ", len(tf.config.list_physical_devices('CPU')))
 
-NUMEPOCHS = 100
+NUMEPOCHS = 1000
 PHASEMAX = 100
 PERCENTPILEUP = 0.5
 NUMTRAINING = 20000
@@ -199,6 +202,7 @@ def PhaseNet_Single():
     For single phase prediction
     '''
     defSize = TRACELENGTH-4*AUGMENTATION
+    input = layers.Input(shape=(defSize,1))
     phaseconv1 = layers.Conv1D(kernel_size=10, filters=16, activation='tanh', name='conv1')(input)
     phaseflat1 = layers.Flatten(name='flatten1')(phaseconv1)
     phasedense1 = layers.Dense(128, activation='relu', name='dense1')(phaseflat1)
@@ -213,6 +217,7 @@ def AmpNet_Single():
     For single amplitude prediction
     '''
     defSize = TRACELENGTH-4*AUGMENTATION
+    input = layers.Input(shape=(defSize,1))
     ampconv1 = layers.Conv1D(kernel_size=10, filters=16, activation='tanh', name='conv1')(input)
     ampflat1 = layers.Flatten(name='flatten1')(ampconv1)
     ampdense1 = layers.Dense(128, activation='relu', name='dense1')(ampflat1)
@@ -227,10 +232,11 @@ def PileupNet_Single():
     for single pileup prediction
     '''
     defSize = TRACELENGTH-4*AUGMENTATION
+    input = layers.Input(shape=(defSize,1))
     pileupconv1 = layers.Conv1D(kernel_size=4, filters=16, activation='relu', name='conv1')(input)
     pileupflat1 = layers.Flatten(name='flatten1')(pileupconv1)
-    pileupdense1 = layers.Dense(32, activation='relu', name='dense1')(pileupflat1)
-    pileupoutput = layers.Dense(1, activation='linear', name='pileupoutput')(pileupdense1)
+    #pileupdense1 = layers.Dense(32, activation='relu', name='dense1')(pileupflat1)
+    pileupoutput = layers.Dense(1, activation='linear', name='pileupoutput')(pileupflat1)
     model = models.Model(inputs=input, outputs=pileupoutput)
     model.summary()
 
@@ -336,13 +342,15 @@ print(DATASET_SIZE,traces.shape,phases.shape,amps.shape,pileup.shape)
 print('Loaded Data')
 
 from sklearn.model_selection import train_test_split
-train_x, test_x, train_y, test_y, train_ifPile, test_ifPile, train_amps, test_amps = train_test_split(traces,phases,pileup,amps,train_size=0.85)
+train_x, test_x, train_y, test_y, train_ifPile, test_ifPile, train_amps, test_amps = train_test_split(traces,phases,pileup,amps,train_size=0.60)
+
+print('Split Data')
 
 model = PileupNet_Single()
 
-phase_layers = [layer for layer in model.layers if 'phase' in layer.name]
-pileup_layers = [layer for layer in model.layers if 'pileup' in layer.name]
-amp_layers = [layer for layer in model.layers if 'amp' in layer.name]
+#phase_layers = [layer for layer in model.layers if 'phase' in layer.name]
+#pileup_layers = [layer for layer in model.layers if 'pileup' in layer.name]
+#amp_layers = [layer for layer in model.layers if 'amp' in layer.name]
 
 min_delta = 5.e-6
 patience = 10
@@ -356,36 +364,17 @@ early_stopping_all =tf.keras.callbacks.EarlyStopping(
     restore_best_weights=True
 )
 
-early_stopping_pileup = EarlyStoppingWithUntrainableLayers(
-    monitor='val_pileupoutput_loss',
-    min_delta=min_delta,
-    patience=patience,
-    verbose=1,
-    restore_best_weights=True,
-    layers_to_freeze=pileup_layers
-)
+#early_stopping_pileup = EarlyStoppingWithUntrainableLayers(
+#    monitor='val_pileupoutput_loss',
+#    min_delta=min_delta,
+#    patience=patience,
+#    verbose=1,
+#    restore_best_weights=True,
+#    layers_to_freeze=pileup_layers
+#)
 
-early_stopping_phase = EarlyStoppingWithUntrainableLayers(
-    monitor='val_phaseoutput_loss',
-    min_delta=min_delta,
-    patience=patience,
-    verbose=1,
-    restore_best_weights=True,
-    layers_to_freeze=phase_layers
-)
-
-early_stopping_amp = EarlyStoppingWithUntrainableLayers(
-    monitor='val_ampoutput_loss',
-    min_delta=min_delta,
-    patience=patience,
-    verbose=1,
-    restore_best_weights=True,
-    layers_to_freeze=amp_layers
-)
-
-
-model.compile(optimizer='adam', loss=['bce','mse','mse'], metrics='accuracy')
-history = model.fit(train_x, [train_ifPile,train_y,train_amps], epochs=NUMEPOCHS, batch_size=batch_size, validation_split=0.2, verbose=2, callbacks=[early_stopping_all,early_stopping_pileup,early_stopping_phase,early_stopping_amp])
+model.compile(optimizer='adam', loss='bce', metrics='accuracy')
+history = model.fit(train_x, train_ifPile, epochs=NUMEPOCHS, batch_size=batch_size, validation_split=0.2, verbose=2, callbacks=[es])
 
 
 #### Saving the model
