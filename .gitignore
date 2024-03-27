@@ -1,6 +1,10 @@
 # root files
 *.root 
 
+# vscode
+*.vscode
+*.vscode/*
+
 # Prerequisites
 *.d
 
