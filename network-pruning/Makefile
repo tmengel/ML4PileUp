@@ -1,31 +1,25 @@
+CXX=g++
+CXX_COMMON=-O2 -std=c++11 -pedantic -W -Wall -Wshadow -fPIC -pthread
+CXX_SHARED=-shared
+CXX_SONAME=-Wl,-soname,
 
--include Makefile.inc
-
-
-BINS = $(patsubst %.cpp, %, $(wildcard *.cpp))
-		
-
-
-CXX = g++
-CCFLAGS = $(shell root-config --cflags) #-ggdb 
-
-CXX_PYTHIA= $(PYTHIA8_INCLUDE) $(PYTHIA8_LIB) -lpythia8 -ldl
-CXX_COMMON:=-I$(PREFIX_INCLUDE) $(CXX_COMMON) $(GZIP_LIB)
-CXX_COMMON+= -L$(PREFIX_LIB) -Wl,-rpath,$(PREFIX_LIB) -ltenngen200 -ldl
-
-
+LIB_SUFFIX=.so
 LD = g++
-LDFLAGS = 
 
-LIBS = $(shell root-config --libs) -lMLP -lMinuit -lTreePlayer -lTMVA -lTMVAGui -lXMLIO  -lMLP -lm
-CXX_ROOT = $(ROOT_LIB) $(shell root-config --cflags --glibs)
+CXX_ROOT = $(shell root-config  --cflags --libs)
+
+
+CXX_COMMON:= $(CXX_COMMON) $(GZIP_LIB) $(CXX_ROOT)
+
+# Targets
+BINS = $(patsubst %.cpp, %, $(wildcard *.cpp))
+	
 default : $(BINS)
 
-$(BINS): % : %.cpp 
+$(BINS): % : %.cpp
 	@echo -n "Building $@ ... "
-	$(CXX)  $(CCFLAGS) $<  -o $@ -w  $(CXX_COMMON) $(CXX_PYTHIA) $(CXX_ROOT) $(FASTJET3_INCLUDE) $(FASTJET3_LIB) $(shell $(FASTJET3_CONFIG)/fastjet-config --cxxflags --libs)
+	$(CXX) $<  -o $@ -w  $(CXX_COMMON)
 	@echo "Done"
-
 
 clean: 
 	rm -f *.o	$(BINS)
