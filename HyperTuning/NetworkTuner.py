@@ -173,6 +173,7 @@ class NetworkTuner:
         Get the data
         '''
         branches=['pileup', 'amp', 'phase', 'trace']
+        # branches=[ 'amp', 'phase', 'trace']
         file = uproot.open(filename)
         tree = file[treename]
         data = {}
@@ -186,9 +187,10 @@ class NetworkTuner:
         print("Test size: ",test_size)
 
         x = np.array(data["trace"])
+        y_phase = np.array(data["phase"])
         y_pileup = np.array(data["pileup"])
         y_amp = np.array(data["amp"])
-        y_phase = np.array(data["phase"])
+        
 
         x_train, x_test, y_pileup_train, y_pileup_test, y_amp_train, y_amp_test, y_phase_train, y_phase_test = train_test_split(x, y_pileup, y_amp, y_phase, test_size=test_size)
 
