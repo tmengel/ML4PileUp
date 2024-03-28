@@ -1,0 +1,58 @@
+{
+  "AUGMENTATION": 8,
+  "TRACELENGTH": 250,
+  "INPUTSIZE": 218,
+  "VALIDATION_SPLIT": 0.2,
+  "TRAIN_PERCENT": 0.1,
+  "DATAFILE": "/home/tmengel/ML4PileUp/data/Data10percFloat.root",
+  "TREENAME": "OutputTree",
+  "EPOCHS_SEARCH": 10,
+  "EPOCHS_FINAL": 100,
+  "BATCH_SIZE": 32,
+  "DATA_FILE": "/home/tmengel/ML4PileUp/data/Data10percFloat.root",
+  "OUTPUT_DIR": "/home/tmengel/ML4PileUp/HyperTuning/output/",
+  "MODEL_TYPES": [
+    "Amp",
+    "Pileup",
+    "Phase"
+  ],
+  "Amp": {
+    "LOSS": "mse",
+    "OUTPUT_ACVTIVATIONS": [
+      "relu",
+      "linear"
+    ],
+    "OBJECTIVE": "val_loss",
+    "EARLY_STOPPING_VAR": "val_loss",
+    "EARLY_STOPPING_MODE": "min",
+    "DIRECTORY": "AmpDir",
+    "PROJECT_NAME": "AmpHyperTune",
+    "TUNED_MODEL": "AmpHyperTunedModel"
+  },
+  "Pileup": {
+    "LOSS": "bce",
+    "OUTPUT_ACVTIVATIONS": [
+      "sigmoid",
+      "tanh"
+    ],
+    "OBJECTIVE": "val_accuracy",
+    "EARLY_STOPPING_VAR": "val_accuracy",
+    "EARLY_STOPPING_MODE": "max",
+    "DIRECTORY": "PileupDir",
+    "PROJECT_NAME": "PileupHyperTune",
+    "TUNED_MODEL": "PileupHyperTunedModel"
+  },
+  "Phase": {
+    "LOSS": "mse",
+    "OUTPUT_ACVTIVATIONS": [
+      "relu",
+      "linear"
+    ],
+    "OBJECTIVE": "val_loss",
+    "EARLY_STOPPING_VAR": "val_loss",
+    "EARLY_STOPPING_MODE": "min",
+    "DIRECTORY": "PhaseDir",
+    "PROJECT_NAME": "PhaseHyperTune",
+    "TUNED_MODEL": "PhaseHyperTunedModel"
+  }
+}
