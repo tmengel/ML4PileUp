@@ -1,3 +1,6 @@
+# hdf5 files
+*.h5
+
 # root files
 *.root 
 
