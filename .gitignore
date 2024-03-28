@@ -1,5 +1,5 @@
 # output directory in HyperTuning
-*/HyperTuning/output/*
+HyperTuning/output
 
 # hdf5 files
 *.h5
