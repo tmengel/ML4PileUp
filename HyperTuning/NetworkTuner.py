@@ -397,7 +397,7 @@ if __name__ == "__main__":
 
     # create NetworkTuner object
     nt = NetworkTuner(args.config, args.type)
-    # nt.Tune()
+    nt.Tune()
 
     print("Done")
     sys.exit()

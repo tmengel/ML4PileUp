@@ -11,7 +11,7 @@
 
 int main(int argc, char** argv)
 {   
-    if(argc != 2)
+    if(argc < 2)
     {
         std::cout << "Usage: CutDataFile <inputfile>" << std::endl;
         return 1;
@@ -49,13 +49,11 @@ int main(int argc, char** argv)
     }
 
     // input variables
-    bool pileup = false;
     double amp = 0;
     double phase = 0;
     std::vector<double> * trace = 0;
 
     // set branch addresses
-    tree->SetBranchAddress("pileup",&pileup);
     tree->SetBranchAddress("amp",&amp);
     tree->SetBranchAddress("phase",&phase);
     tree->SetBranchAddress("trace",&trace);
@@ -81,13 +79,13 @@ int main(int argc, char** argv)
 
     for(int i = 0; i < nentries; i++)
     {
-        
         if(i % inverted_percentage != 0) continue; // skip events
         if(i % 1000000 == 0) std::cout << "Event " << i << " of " << nentries << std::endl;
 
         tree->GetEntry(i);
 
         // only save events with no pileup
+        bool pileup = phase != 0;
         if(pile_up_only && !pileup) continue;
     
         amp_out = amp;
