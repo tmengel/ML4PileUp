@@ -172,7 +172,7 @@ class NetworkTuner:
         '''
         Get the data
         '''
-        branches=['pileup', 'amp', 'phase', 'trace']
+        branches=['amp', 'phase', 'trace']
         # branches=[ 'amp', 'phase', 'trace']
         file = uproot.open(filename)
         tree = file[treename]
@@ -188,7 +188,8 @@ class NetworkTuner:
 
         x = np.array(data["trace"])
         y_phase = np.array(data["phase"])
-        y_pileup = np.array(data["pileup"])
+        y_pileup = np.zeros_like(y_phase)
+        y_pileup[y_phase > 0] = 1
         y_amp = np.array(data["amp"])
         
 
